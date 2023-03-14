@@ -1,0 +1,7 @@
+spring:
+  datasource:
+    url: "jdbc:postgresql://postgres:5432/campsite?currentSchema=public"
+    username: campsite
+    password: campsite
+  jpa:
+    database-platform: "org.hibernate.dialect.PostgreSQL9Dialect"

@@ -1,0 +1,16 @@
+spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            clientId: 569030786242-d0lqed4e3nsjnudtkvp3g9l478dq62up.apps.googleusercontent.com
+            clientSecret: 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
+            scope:
+              - email
+  datasource:
+    url: "jdbc:postgresql://localhost:15432/campsitedemo?currentSchema=public"
+    username: campsite
+    password: campsite
+  jpa:
+    database-platform: "org.hibernate.dialect.PostgreSQL9Dialect"

@@ -1,0 +1,19 @@
+version: '2.1'
+
+services:
+
+  postgres:
+    image: postgres:12.5-alpine
+    environment:
+      POSTGRES_USER: "campsite"
+      POSTGRES_PASSWORD: "campsite"
+      POSTGRES_DB: "campsite"
+    ports:
+      - "5432:5432"
+
+  campsite-app:
+    image: campingsite-app:latest
+    environment:
+      SPRING_PROFILES_ACTIVE: compose
+    ports:
+      - "8080:8080"

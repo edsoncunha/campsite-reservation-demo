@@ -1,0 +1,35 @@
+- Escolher banco de dados
+- Montar migration
+- Configurar migration com TestContainer
+- Escrever primeiros testes de integração com banco
+- Escrever primeiro teste e2e com TestContainer
+- Escrever teste com cache no Redis containerizado
+- Escrever teste de carga com Gatling
+
+- Escrever gerenciador de reservas
+
+
+- Listagem básica de disponibilidade
+- Cache na consulta de disponibilidade
+- Atualização da chave de cache no momento da reserva
+
+- Enviar perguntas sobre os requisitos:
+   - Existe possibilidade de overbooking?
+   - Os espaços no acampamento são delimitados?
+   - A pessoa pode escolher uma posição no momento da reserva?
+   - Existe uma pré-alocação de lugares, tal como a compra de passagens aéreas?
+   - Em caso afirmativo, deixamos que a pessoa tente novamente ou criamos uma fila online?
+   - Qual é o tráfego inicial esperado para o sistema? Qual é a quantidade esperada de visitantes únicos em um único dia?
+   - Pedir mais prazo
+
+
+
+Hello Lucy,
+
+I have some questions regarding the challenge requirements.
+
+1) Users can make reservations for more than 1 person or they can only make reservations for themselves?
+    1.1) If users should be able to make reservations for more than 1 person, how is campsite organized? Is there some sort of boundary for each tent?
+2) Should concurrent reservations be handled like flight reservations? When reserving a flight, users have some minutes to fill the forms and their seats (even if not marked yet) are pre-allocated during that time.
+    2.1) In this case, what to do if a very large number of people are filling in at the same time? Anyone left out will be placed in a virtual queue? Or will these people find out if the reservation was successful only after filling out the form?
+3) What is the expected number of unique website visitors in a single day?
