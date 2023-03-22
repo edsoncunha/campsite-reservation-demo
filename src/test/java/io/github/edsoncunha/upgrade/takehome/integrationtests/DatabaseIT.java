@@ -31,7 +31,7 @@ public class DatabaseIT {
     }
 
     @Test
-    public void databseContextLoads() {
+    public void databaseContextLoads() {
 
     }
 }

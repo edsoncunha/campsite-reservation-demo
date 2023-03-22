@@ -31,6 +31,6 @@ public class ReservationController {
 
 //            Authentication authentication
             ) {
-        throw new NotImplementedException();
+        return false;
     }
 }

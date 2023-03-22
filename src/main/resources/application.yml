@@ -14,3 +14,7 @@ spring:
     password: campsite
   jpa:
     database-platform: "org.hibernate.dialect.PostgreSQL9Dialect"
+
+campsite:
+  capacity: 30
+  timeZone: UTC

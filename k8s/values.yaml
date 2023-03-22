@@ -1,7 +1,7 @@
 replicaCount: 1
 
 image:
-  name: campsite_challenge
+  name: campingsite-app:latest
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: ""

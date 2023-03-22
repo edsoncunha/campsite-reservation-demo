@@ -41,6 +41,13 @@ dependencies {
     configurations.every { it.exclude group: 'org.springframework.boot', module: 'spring-boot-starter-logging'}
 
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.0.4'
+
+    testImplementation group: 'org.mockito', name: 'mockito-junit-jupiter', version: '5.2.0'
+
+    implementation 'org.springframework.retry:spring-retry:1.3.3'
+    testImplementation("org.assertj:assertj-core:3.24.2")
+
+
 }
 
 tasks.named('test') {
