@@ -2,8 +2,9 @@ package io.github.edsoncunha.upgrade.takehome.domain.services;
 
 import io.github.edsoncunha.upgrade.takehome.domain.entities.Reservation;
 import io.github.edsoncunha.upgrade.takehome.domain.exceptions.NoPlacesAvailableException;
+import io.github.edsoncunha.upgrade.takehome.domain.exceptions.ReservationNotFoundException;
 import io.github.edsoncunha.upgrade.takehome.domain.repositories.ReservationRepository;
-import io.github.edsoncunha.upgrade.takehome.domain.services.validation.ValidationRule;
+import io.github.edsoncunha.upgrade.takehome.domain.services.validation.ReservationRule;
 import io.github.edsoncunha.upgrade.takehome.etc.Clock;
 import lombok.Builder;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,20 +25,20 @@ public class ReservationService {
     private int campsiteCapacity;
     private final Clock clock;
     private final ReservationRepository repository;
-    private final List<ValidationRule> validationRules;
+    private final List<ReservationRule> reservationRules;
     private final LockManager lockManager;
 
-    public ReservationService(@Value("${campsite.capacity}") int capacity, Clock clock, ReservationRepository repository, List<ValidationRule> validationRules, LockManager lockManager) {
+    public ReservationService(@Value("${campsite.capacity}") int capacity, Clock clock, ReservationRepository repository, List<ReservationRule> reservationRules, LockManager lockManager) {
         this.campsiteCapacity = capacity;
         this.clock = clock;
         this.repository = repository;
-        this.validationRules = validationRules;
+        this.reservationRules = reservationRules;
         this.lockManager = lockManager;
     }
 
     @Transactional
     public Reservation reserve(String userEmail, LocalDate arrivalDate, int lengthOfStay) {
-        validationRules.forEach(rule -> rule.validate(userEmail, arrivalDate, lengthOfStay));
+        reservationRules.forEach(rule -> rule.validate(userEmail, arrivalDate, lengthOfStay));
 
         AtomicReference<Reservation> savedReservation = new AtomicReference<>();
 
@@ -47,11 +48,17 @@ public class ReservationService {
         if (isReservable(arrivalDate, lengthOfStay)) {
             lockManager.lock(lockId, starvationTimeout, () -> {
                 // double-check locking
+                // TODO: evict cache or force uncached read before persisting to database
                 if (isReservable(arrivalDate, lengthOfStay)) {
-                    savedReservation.set(repository.save(Reservation.builder()
+                    Reservation x = Reservation.builder()
+                            .email(userEmail)
                             .checkin(clock.asZonedDateTime(arrivalDate))
                             .checkout(clock.asZonedDateTime(arrivalDate.plusDays(lengthOfStay)))
-                            .build()));
+                            .build();
+
+                    Reservation r = repository.save(x);
+
+                    savedReservation.set(r);
                 }
             });
         }
@@ -74,11 +81,8 @@ public class ReservationService {
         return new HashSet<>(availableDates).containsAll(accommodationDates);
     }
 
+    //TODO: enable caching to speed up reading.
     public List<LocalDate> getAvailableDates(LocalDate firstDayOfAccommodation, LocalDate lastDayOfAccommodation) {
-        if (firstDayOfAccommodation.toEpochDay() >= lastDayOfAccommodation.toEpochDay()) {
-            throw new IllegalArgumentException("Checkout must be greater than check-in date");
-        }
-
         List<Reservation> currentReservations = repository.getReservationsInPeriod(firstDayOfAccommodation, lastDayOfAccommodation);
 
         // the island capacity is small, so it's fine to count occupation per day on the application side
@@ -98,6 +102,15 @@ public class ReservationService {
         }
 
         return availableDates;
+    }
+
+    public void cancelReservation(long reservationId) {
+        Reservation reservation = repository.findById(reservationId)
+                .orElseThrow(ReservationNotFoundException::new);
+
+        reservation.setCanceled(true);
+
+        repository.save(reservation);
     }
 
     private <T> T last(ArrayList<T> list) {

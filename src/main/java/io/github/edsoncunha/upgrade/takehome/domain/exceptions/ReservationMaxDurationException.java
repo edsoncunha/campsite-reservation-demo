@@ -5,7 +5,7 @@ import lombok.AllArgsConstructor;
 import java.text.MessageFormat;
 
 @AllArgsConstructor
-public class ReservationMaxDurationException extends RuntimeException {
+public class ReservationMaxDurationException extends ReservationConstraintException {
     private final int maxAllowedLengthOfStay;
 
     @Override

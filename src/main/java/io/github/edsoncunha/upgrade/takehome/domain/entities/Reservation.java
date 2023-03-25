@@ -15,6 +15,9 @@ public class Reservation {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
+    @Column(name = "email")
+    private String email;
+
     @Column(name = "checkin")
     private ZonedDateTime checkin;
 

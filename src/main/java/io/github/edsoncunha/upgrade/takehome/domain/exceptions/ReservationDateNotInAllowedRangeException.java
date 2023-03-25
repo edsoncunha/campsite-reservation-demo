@@ -8,7 +8,7 @@ import java.time.LocalDate;
 
 @Data
 @AllArgsConstructor
-public class ReservationDateNotInAllowedRangeException extends RuntimeException {
+public class ReservationDateNotInAllowedRangeException extends ReservationConstraintException {
     private final LocalDate allowedStart;
     private final LocalDate allowedEnd;
     private final LocalDate requestedArrivalDate;

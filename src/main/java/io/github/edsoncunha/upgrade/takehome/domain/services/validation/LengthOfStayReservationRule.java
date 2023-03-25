@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component;
 import java.time.LocalDate;
 
 @Component
-public class LengthOfStayValidationRule implements ValidationRule {
+public class LengthOfStayReservationRule implements ReservationRule {
 
     private static final int MAX_ALLOWED_LENGTH_OF_STAY = 3;
 

@@ -11,7 +11,7 @@ import java.time.temporal.ChronoUnit;
 
 @Component
 @AllArgsConstructor
-public class ValidationDateAllowedRangeValidationRule implements ValidationRule {
+public class ValidationDateAllowedRangeReservationRule implements ReservationRule {
     private static final int MIN_ALLOWED_DAYS_IN_ADVANCE = 1;
     private static final int MAX_ALLOWED_DAYS_IN_ADVANCE = 30;
 

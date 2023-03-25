@@ -20,12 +20,12 @@ import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class ValidationDateAllowedRangeValidationRuleTest {
+class ValidationDateAllowedRangeReservationRuleTest {
     @Mock
     private Clock clock;
 
     @InjectMocks
-    private ValidationDateAllowedRangeValidationRule rule;
+    private ValidationDateAllowedRangeReservationRule rule;
 
     @Test
     public void whenReservationIsLessThan1DayAheadAnExceptionMustBeThrown() {

@@ -6,8 +6,8 @@ import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
 
-class LengthOfStayValidationRuleTest {
-    private final LengthOfStayValidationRule rule = new LengthOfStayValidationRule();
+class LengthOfStayReservationRuleTest {
+    private final LengthOfStayReservationRule rule = new LengthOfStayReservationRule();
 
     @Test
     public void campsiteCantBeReservedForMoreThan3Days()  {
