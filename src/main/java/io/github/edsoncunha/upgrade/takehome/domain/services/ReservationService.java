@@ -50,15 +50,15 @@ public class ReservationService {
                 // double-check locking
                 // TODO: evict cache or force uncached read before persisting to database
                 if (isReservable(arrivalDate, lengthOfStay)) {
-                    Reservation x = Reservation.builder()
-                            .email(userEmail)
-                            .checkin(clock.asZonedDateTime(arrivalDate))
-                            .checkout(clock.asZonedDateTime(arrivalDate.plusDays(lengthOfStay)))
-                            .build();
-
-                    Reservation r = repository.save(x);
-
-                    savedReservation.set(r);
+                    savedReservation.set(
+                            repository.save(
+                                    Reservation.builder()
+                                                .email(userEmail)
+                                                .checkin(clock.asZonedDateTime(arrivalDate))
+                                                .checkout(clock.asZonedDateTime(arrivalDate.plusDays(lengthOfStay)))
+                                                .build()
+                            )
+                    );
                 }
             });
         }
@@ -72,7 +72,7 @@ public class ReservationService {
 
     private Boolean isReservable(LocalDate arrivalDate, int lengthOfStay) {
         ArrayList<LocalDate> accommodationDates = new ArrayList<>();
-        for (int i=0; i<lengthOfStay; i++) {
+        for (int i = 0; i < lengthOfStay; i++) {
             accommodationDates.add(arrivalDate.plusDays(i));
         }
 

@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -47,45 +48,91 @@ class ReservationServiceTest {
         return ZonedDateTime.of(LocalDate.of(year, 1, day), LocalTime.MIDNIGHT, ZoneId.of("UTC"));
     }
 
-    @Test
-    @DisplayName("A reservation is successful if there is availability in campsite")
-    public void reservationSuccessfulIfThereIsAvailability() {
-        List<ReservationRule> noRules = Collections.emptyList();
-        LockManager lockManagerMock = (id, timeout, operation) -> operation.run(); // just runs the operation it gets
+    @Nested
+    @DisplayName("Reservation")
+    class ReservationTests {
+        @Test
+        @DisplayName("A reservation is successful if there is availability in campsite")
+        public void reservationSuccessfulIfThereIsAvailability() {
+            List<ReservationRule> noRules = Collections.emptyList();
+            // just runs the operation it gets
+            LockManager lockManagerMock = (id, timeout, operation) -> operation.run();
 
-        ReservationService service = serviceBuilderFor(noRules)
-                .lockManager(lockManagerMock)
-                .repository(repositoryMock)
-                .campsiteCapacity(1)
-                .build();
+            ReservationService service = serviceBuilderFor(noRules)
+                    .lockManager(lockManagerMock)
+                    .repository(repositoryMock)
+                    .campsiteCapacity(1)
+                    .build();
 
-        Reservation returnedReservationMock = mock(Reservation.class);
-        when(repositoryMock.save(any())).thenReturn(returnedReservationMock);
+            // just returning what it gets
+            AtomicReference<Reservation> reservationSentToDatabase = new AtomicReference<>();
+            when(repositoryMock.save(any())).thenAnswer((invocation) -> {
+                Reservation reservation = invocation.getArgument(0, Reservation.class);
+                reservationSentToDatabase.set(reservation);
+                return reservation;
+            });
 
-        when(clockMock.asZonedDateTime(any())).thenAnswer((invocation) -> {
-            LocalDate date = invocation.getArgument(0, LocalDate.class);
-            return zonedAtUtc(date);
-        });
+            // mimic clock
+            when(clockMock.asZonedDateTime(any())).thenAnswer((invocation) -> {
+                LocalDate date = invocation.getArgument(0, LocalDate.class);
+                return zonedAtUtc(date);
+            });
 
-        String email = "dummy@test.com";
-        LocalDate arrivalDate = LocalDate.now().plusDays(1);
-        int lengthOfStay = 1;
+            // when
+            String email = "dummy@test.com";
+            LocalDate arrivalDate = LocalDate.now().plusDays(1);
+            int lengthOfStay = 1;
 
-        Reservation returnedReservation = service.reserve(email, arrivalDate, lengthOfStay);
+            Reservation returnedReservation = service.reserve(email, arrivalDate, lengthOfStay);
 
-        ArgumentMatcher<Reservation> reservationMatcher = argument -> {
-            assertThat(argument.getEmail()).isEqualTo(email);
-            assertThat(argument.getCheckin()).isEqualTo(zonedAtUtc(arrivalDate));
-            assertThat(argument.getCheckout()).isEqualTo(zonedAtUtc(arrivalDate.plusDays(lengthOfStay)));
+            // then
+            Mockito.verify(repositoryMock).save(any());
 
-            // if reached this line, then all validations are ok.
-            return true;
-        };
+            assertThat(reservationSentToDatabase.get()).isNotNull();
+            assertThat(reservationSentToDatabase.get().getEmail()).isEqualTo(email);
+            assertThat(reservationSentToDatabase.get().getCheckin()).isEqualTo(zonedAtUtc(arrivalDate));
+            assertThat(reservationSentToDatabase.get().getCheckout()).isEqualTo(zonedAtUtc(arrivalDate.plusDays(lengthOfStay)));
 
-        Mockito.verify(repositoryMock.save(argThat(reservationMatcher)));
+            assertThat(returnedReservation).isNotNull();
+        }
 
-        assertThat(returnedReservation).isNotNull();
+        @Test
+        @DisplayName("A reservation must fail if campsite is full")
+        public void reservationShouldFailIfOccupationIsFull() {
+            List<ReservationRule> noRules = Collections.emptyList();
+            // just runs the operation it gets
+            LockManager lockManagerMock = (id, timeout, operation) -> operation.run();
+
+            ReservationService service = serviceBuilderFor(noRules)
+                    .lockManager(lockManagerMock)
+                    .repository(repositoryMock)
+                    .campsiteCapacity(1)
+                    .build();
+
+            String email = "dummy@test.com";
+            LocalDate arrivalDate = LocalDate.now().plusDays(1);
+            int lengthOfStay = 1;
+
+            // emulate an existing reservation with same parameters
+            when(repositoryMock.getReservationsInPeriod(any(), any())).thenReturn(
+                Collections.singletonList (
+                    Reservation.builder()
+                            .id(1)
+                            .checkin(zonedAtUtc(arrivalDate))
+                            .checkout(zonedAtUtc(arrivalDate.plusDays(lengthOfStay)))
+                            .build()
+                )
+            );
+
+            // when
+            assertThrows(NoPlacesAvailableException.class, () -> service.reserve(email, arrivalDate, lengthOfStay));
+
+            // then
+            Mockito.verify(repositoryMock, times(0)).save(any());
+        }
+
     }
+
 
 
 
@@ -152,7 +199,7 @@ class ReservationServiceTest {
     // testar se reserva não é feita se todas acomodações estiverem ocupadas no período
 
     @Nested
-    @DisplayName("Reservation availability tests")
+    @DisplayName("Reservation availability")
     class ReservationAvailabilityTests {
         @Test
         @DisplayName("Availability is correctly calculated even with fragmented space allocation")
@@ -200,7 +247,7 @@ class ReservationServiceTest {
     }
 
     @Nested
-    @DisplayName("Cancellation tests")
+    @DisplayName("Cancellation")
     class CancellationTests {
         @Test
         @DisplayName("A reservation is properly canceled if it is found on database")
