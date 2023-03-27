@@ -1,6 +1,8 @@
 package io.github.edsoncunha.upgrade.takehome.api;
 
 import io.github.edsoncunha.upgrade.takehome.api.requests.ReservationRequest;
+import io.github.edsoncunha.upgrade.takehome.api.responses.ApiCallError;
+import io.github.edsoncunha.upgrade.takehome.api.swagger.types.ListOfLocalDate;
 import io.github.edsoncunha.upgrade.takehome.domain.entities.Reservation;
 import io.github.edsoncunha.upgrade.takehome.domain.services.ReservationService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -30,20 +32,27 @@ public class ReservationController {
     @Operation(summary = "Returns a boolean indicating whether a reservation would be available for a given arrival date and length of stay")
     @ApiResponses(
             value = {@ApiResponse(responseCode = "200", content = {@Content(mediaType = "application/json",
-                    schema = @Schema(implementation = Boolean.class))})}
+                    schema = @Schema(implementation = ListOfLocalDate.class))})}
     )
-    public List<LocalDate> getAvailability(
-            @Parameter(description = "Arrival date")
-            @RequestParam LocalDate arrivalDate,
+    public ResponseEntity<List<LocalDate>> getAvailability(
+            @Parameter(description = "First day of availability search")
+            @RequestParam LocalDate startDate,
 
-            @Parameter(description = "Length of stay (in days)")
-            @RequestParam int lengthOfStay
+            @Parameter(description = "Last day of availability search")
+            @RequestParam LocalDate endDate
     ) {
-        LocalDate lastDayOfAccommodation = arrivalDate.plusDays(lengthOfStay - 1);
-        return reservationService.getAvailableDates(arrivalDate, lastDayOfAccommodation);
+        return ResponseEntity.ok(reservationService.getAvailableDates(startDate, endDate));
     }
 
     @PostMapping
+    @Operation(summary = "Submits a reservation")
+    @ApiResponses(
+            value = {@ApiResponse(responseCode = "201", description = "Successful", content = {@Content(mediaType = "application/json",
+                    schema = @Schema(implementation = Boolean.class))}),
+                    @ApiResponse(responseCode = "409", description = "Reservation was not successful due to a rule violation", content = {@Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ApiCallError.class))})
+            }
+    )
     public ResponseEntity<Reservation> submitReservation(ReservationRequest request) {
         Reservation reservation = reservationService.reserve(request.email, request.arrivalDate, request.lengthOfStay);
 
@@ -53,8 +62,12 @@ public class ReservationController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> cancelReservation(@PathVariable @NotNull long reservationId) {
-        reservationService.cancelReservation(reservationId);
+    @Operation(summary = "Cancels a reservation")
+    @ApiResponses(
+            value = {@ApiResponse(responseCode = "200", description = "Canceled successfully", content = {@Content(mediaType = "application/json")})}
+    )
+    public ResponseEntity<Void> cancelReservation(@Parameter(description = "Reservation id", required = true) @PathVariable("id") @NotNull long id) {
+        reservationService.cancelReservation(id);
 
         return ResponseEntity.ok().build();
     }

@@ -1,8 +1,10 @@
 package io.github.edsoncunha.upgrade.takehome.domain.entities;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
@@ -10,6 +12,8 @@ import java.time.ZonedDateTime;
 @Entity(name = "reservation")
 @Data
 @Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class Reservation {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

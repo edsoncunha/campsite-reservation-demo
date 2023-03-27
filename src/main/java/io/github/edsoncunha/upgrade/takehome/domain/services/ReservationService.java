@@ -37,16 +37,18 @@ public class ReservationService {
     }
 
     @Transactional
-    public Reservation reserve(String userEmail, LocalDate arrivalDate, int lengthOfStay) {
+    public Reservation reserve(String userEmail, LocalDate arrivalDate, int lengthOfStay, int identifier) {
         reservationRules.forEach(rule -> rule.validate(userEmail, arrivalDate, lengthOfStay));
 
         AtomicReference<Reservation> savedReservation = new AtomicReference<>();
 
-        int lockId = this.hashCode();
+        //int lockId = this.hashCode();
         Duration starvationTimeout = Duration.ofSeconds(3);
 
         if (isReservable(arrivalDate, lengthOfStay)) {
-            lockManager.lock(lockId, starvationTimeout, () -> {
+            lockManager.lock(13, starvationTimeout, () -> {
+                System.out.println("Running identifier" + identifier);
+
                 // double-check locking
                 // TODO: evict cache or force uncached read before persisting to database
                 if (isReservable(arrivalDate, lengthOfStay)) {
