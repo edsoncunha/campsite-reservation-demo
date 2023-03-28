@@ -10,15 +10,19 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.*;
+import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.*;
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -26,19 +30,23 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class ReservationServiceTest {
+    private final LockManager bypassLockManager = new LockManager() {
+        @Override
+        public <T> T lock(long id, Duration timeout, Supplier<T> operation) {
+            return operation.get();
+        }
+    };
     @Mock
     private Clock clockMock;
     @Mock
     private ReservationRepository repositoryMock;
-    @Mock
-    private LockManager lockManagerMock;
 
     private ReservationService.ReservationServiceBuilder serviceBuilderFor(List<ReservationRule> reservationRules) {
         return ReservationService.builder()
                 .clock(clockMock)
                 .reservationRules(reservationRules)
                 .repository(repositoryMock)
-                .lockManager(lockManagerMock);
+                .lockManager(bypassLockManager);
     }
 
     private LocalDateTime january(int day, int year) {
@@ -53,11 +61,7 @@ class ReservationServiceTest {
         public void reservationSuccessfulIfThereIsAvailability() {
             List<ReservationRule> noRules = Collections.emptyList();
             // just runs the operation it gets
-            LockManager lockManagerMock = (id, timeout, operation) -> operation.run();
-
             ReservationService service = serviceBuilderFor(noRules)
-                    .lockManager(lockManagerMock)
-                    .repository(repositoryMock)
                     .campsiteCapacity(1)
                     .build();
 
@@ -68,12 +72,6 @@ class ReservationServiceTest {
                 reservationSentToDatabase.set(reservation);
                 return reservation;
             });
-
-//            // mimic clock
-//            when(clockMock.asZonedDateTime(any())).thenAnswer((invocation) -> {
-//                LocalDate date = invocation.getArgument(0, LocalDate.class);
-//                return zonedAtUtc(date);
-//            });
 
             // when
             String email = "dummy@test.com";
@@ -98,11 +96,7 @@ class ReservationServiceTest {
         public void reservationShouldFailIfOccupationIsFull() {
             List<ReservationRule> noRules = Collections.emptyList();
             // just runs the operation it gets
-            LockManager lockManagerMock = (id, timeout, operation) -> operation.run();
-
             ReservationService service = serviceBuilderFor(noRules)
-                    .lockManager(lockManagerMock)
-                    .repository(repositoryMock)
                     .campsiteCapacity(1)
                     .build();
 
@@ -112,13 +106,13 @@ class ReservationServiceTest {
 
             // emulate an existing reservation with same parameters
             when(repositoryMock.getReservationsInPeriod(any(), any())).thenReturn(
-                Collections.singletonList (
-                    Reservation.builder()
-                            .id(1)
-                            .checkin(arrivalDate.atStartOfDay())
-                            .checkout(arrivalDate.plusDays(lengthOfStay).atStartOfDay())
-                            .build()
-                )
+                    Collections.singletonList(
+                            Reservation.builder()
+                                    .id(1)
+                                    .checkin(arrivalDate.atStartOfDay())
+                                    .checkout(arrivalDate.plusDays(lengthOfStay).atStartOfDay())
+                                    .build()
+                    )
             );
 
             // when

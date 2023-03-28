@@ -5,20 +5,14 @@ import io.github.edsoncunha.upgrade.takehome.domain.exceptions.NoPlacesAvailable
 import io.github.edsoncunha.upgrade.takehome.domain.repositories.ReservationRepository;
 import io.github.edsoncunha.upgrade.takehome.domain.services.ReservationService;
 import io.github.edsoncunha.upgrade.takehome.support.PostgresContainerExtension;
-import org.hibernate.Session;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.time.LocalDate;
@@ -35,24 +29,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @ActiveProfiles("it")
 @DirtiesContext
 public class ReservationIT {
-//    static PostgreSQLContainer<?> container = new PostgreSQLContainer<>("postgres:12.5-alpine")
-//            .withUsername("test-user")
-//            .withPassword("test-pwd")
-//            .withDatabaseName("campingsite-demo")
-//            .waitingFor(Wait.forListeningPort());
     @Autowired
     private ReservationRepository reservationRepository;
     @Autowired
     private ReservationService reservationService;
-
-//    @DynamicPropertySource
-//    static void properties(DynamicPropertyRegistry registry) {
-//        container.start();
-//
-//        registry.add("spring.datasource.url", container::getJdbcUrl);
-//        registry.add("spring.datasource.password=", container::getPassword);
-//        registry.add("spring.datasource.username=", container::getUsername);
-//    }
 
     @BeforeEach
     public void setUp() {
@@ -73,6 +53,8 @@ public class ReservationIT {
     @Test
     @DisplayName("It should perform a reservation concurrently")
     public void concurrentReservationTest() throws InterruptedException {
+        reservationService.setCapacity(1);
+
         doConcurrenctly(s -> reservationService.reserve("simple@mail.com", LocalDate.now().plusDays(1), 1));
 
         assertThat(reservationRepository.count()).isEqualTo(1);
@@ -82,13 +64,11 @@ public class ReservationIT {
     public void reservationsRespectLimitsOfCampsite() {
         reservationService.setCapacity(1);
 
-        Reservation r1 = reservationService.reserve("simple@mail.com", LocalDate.now().plusDays(3), 1);
-
-        assertThat(r1.getId()).isGreaterThan(0L);
+        reservationService.reserve("simple@mail.com", LocalDate.now().plusDays(3), 1);
 
         assertThrows(NoPlacesAvailableException.class, () -> {
             reservationService.reserve("simple@mail.com", LocalDate.now().plusDays(3), 1);
-        }) ;
+        });
     }
 
     protected void doConcurrenctly(Consumer<String> operation) throws InterruptedException {

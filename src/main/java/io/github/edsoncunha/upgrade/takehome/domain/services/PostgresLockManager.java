@@ -2,6 +2,7 @@ package io.github.edsoncunha.upgrade.takehome.domain.services;
 
 import io.github.edsoncunha.upgrade.takehome.domain.exceptions.LockNotAcquiredException;
 import lombok.AllArgsConstructor;
+import lombok.SneakyThrows;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.retry.support.RetryTemplate;
@@ -9,6 +10,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
+import java.util.concurrent.Callable;
+import java.util.function.Supplier;
 
 @Component
 @AllArgsConstructor
@@ -18,9 +21,9 @@ public class PostgresLockManager implements LockManager {
 
     @Transactional
     @Override
-    public void lock(long id, Duration timeout, Runnable operation) {
+    public <T> T lock(long id, Duration timeout, Supplier<T> supplier) {
         acquireLock(id, timeout);
-        operation.run();
+        return supplier.get();
     }
 
     private void acquireLock(long id, Duration timeout) {

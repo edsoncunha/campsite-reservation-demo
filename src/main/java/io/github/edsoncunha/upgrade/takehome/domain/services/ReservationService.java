@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
@@ -43,19 +44,24 @@ public class ReservationService {
 
         // double-check locking
         // TODO: evict cache or force uncached read before persisting to database
-        if (isReservable(arrivalDate, lengthOfStay)) {
 
-            return repository.save(
-                    Reservation.builder()
-                            .email(userEmail)
-                            .checkin(arrivalDate.atStartOfDay())
-                            .checkout(arrivalDate.plusDays(lengthOfStay).atStartOfDay())
-                            .build()
-            );
+        Duration timeout = Duration.ofSeconds(3);
 
-        }
+        return lockManager.lock(13, timeout, () -> {
+            if (isReservable(arrivalDate, lengthOfStay)) {
 
-        throw new NoPlacesAvailableException();
+                return repository.save(
+                        Reservation.builder()
+                                .email(userEmail)
+                                .checkin(arrivalDate.atStartOfDay())
+                                .checkout(arrivalDate.plusDays(lengthOfStay).atStartOfDay())
+                                .build()
+                );
+
+            }
+
+            throw new NoPlacesAvailableException();
+        });
     }
 
     private Boolean isReservable(LocalDate arrivalDate, int lengthOfStay) {
