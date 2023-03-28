@@ -55,7 +55,9 @@ public class ReservationIT {
     public void concurrentReservationTest() throws InterruptedException {
         reservationService.setCapacity(1);
 
-        doConcurrenctly(s -> reservationService.reserve("simple@mail.com", LocalDate.now().plusDays(1), 1));
+        int threads = 200;
+
+        doConcurrenctly(threads, s -> reservationService.reserve("simple@mail.com", LocalDate.now().plusDays(1), 1));
 
         assertThat(reservationRepository.count()).isEqualTo(1);
     }
@@ -71,9 +73,7 @@ public class ReservationIT {
         });
     }
 
-    protected void doConcurrenctly(Consumer<String> operation) throws InterruptedException {
-        int threads = 20;
-
+    protected void doConcurrenctly(int threads, Consumer<String> operation) throws InterruptedException {
         CountDownLatch startLatch = new CountDownLatch(1);
         CountDownLatch endLatch = new CountDownLatch(threads);
 

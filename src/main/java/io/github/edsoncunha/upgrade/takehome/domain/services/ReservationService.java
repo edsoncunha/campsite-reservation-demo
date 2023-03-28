@@ -13,12 +13,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.LocalDate;
-import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 
 @Builder
 @Service
@@ -42,26 +40,28 @@ public class ReservationService {
     public Reservation reserve(String userEmail, LocalDate arrivalDate, int lengthOfStay) {
         reservationRules.forEach(rule -> rule.validate(userEmail, arrivalDate, lengthOfStay));
 
-        // double-check locking
-        // TODO: evict cache or force uncached read before persisting to database
-
         Duration timeout = Duration.ofSeconds(3);
 
-        return lockManager.lock(13, timeout, () -> {
-            if (isReservable(arrivalDate, lengthOfStay)) {
+        if (isReservable(arrivalDate, lengthOfStay)) {
+            return lockManager.lock(13, timeout, () -> {
 
-                return repository.save(
-                        Reservation.builder()
-                                .email(userEmail)
-                                .checkin(arrivalDate.atStartOfDay())
-                                .checkout(arrivalDate.plusDays(lengthOfStay).atStartOfDay())
-                                .build()
-                );
+                // double-check locking
+                if (isReservable(arrivalDate, lengthOfStay)) {
+                    return repository.save(
+                            Reservation.builder()
+                                    .email(userEmail)
+                                    .checkin(arrivalDate.atStartOfDay())
+                                    .checkout(arrivalDate.plusDays(lengthOfStay).atStartOfDay())
+                                    .build()
+                    );
 
-            }
+                }
 
-            throw new NoPlacesAvailableException();
-        });
+                throw new NoPlacesAvailableException();
+            });
+        }
+
+        throw new NoPlacesAvailableException();
     }
 
     private Boolean isReservable(LocalDate arrivalDate, int lengthOfStay) {
