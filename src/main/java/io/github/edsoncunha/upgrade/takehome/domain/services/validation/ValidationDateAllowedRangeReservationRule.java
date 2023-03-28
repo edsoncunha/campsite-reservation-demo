@@ -19,9 +19,7 @@ public class ValidationDateAllowedRangeReservationRule implements ReservationRul
 
     @Override
     public void validate(String userEmail, LocalDate arrivalDate, int lengthOfStay) {
-        ZonedDateTime campsiteNow = clock.campsiteDateTime();
-
-        LocalDate campsiteCurrentDate = campsiteNow.toLocalDate();
+        LocalDate campsiteCurrentDate = clock.campsiteDateTime().toLocalDate();
 
         long daysInAdvance = ChronoUnit.DAYS.between(campsiteCurrentDate, arrivalDate);
 

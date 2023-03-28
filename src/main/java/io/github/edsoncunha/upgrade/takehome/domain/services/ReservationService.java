@@ -11,8 +11,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Duration;
 import java.time.LocalDate;
+import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -28,6 +28,7 @@ public class ReservationService {
     private final List<ReservationRule> reservationRules;
     private final LockManager lockManager;
 
+
     public ReservationService(@Value("${campsite.capacity}") int capacity, Clock clock, ReservationRepository repository, List<ReservationRule> reservationRules, LockManager lockManager) {
         this.campsiteCapacity = capacity;
         this.clock = clock;
@@ -37,39 +38,24 @@ public class ReservationService {
     }
 
     @Transactional
-    public Reservation reserve(String userEmail, LocalDate arrivalDate, int lengthOfStay, int identifier) {
+    public Reservation reserve(String userEmail, LocalDate arrivalDate, int lengthOfStay) {
         reservationRules.forEach(rule -> rule.validate(userEmail, arrivalDate, lengthOfStay));
 
-        AtomicReference<Reservation> savedReservation = new AtomicReference<>();
-
-        //int lockId = this.hashCode();
-        Duration starvationTimeout = Duration.ofSeconds(3);
-
+        // double-check locking
+        // TODO: evict cache or force uncached read before persisting to database
         if (isReservable(arrivalDate, lengthOfStay)) {
-            lockManager.lock(13, starvationTimeout, () -> {
-                System.out.println("Running identifier" + identifier);
 
-                // double-check locking
-                // TODO: evict cache or force uncached read before persisting to database
-                if (isReservable(arrivalDate, lengthOfStay)) {
-                    savedReservation.set(
-                            repository.save(
-                                    Reservation.builder()
-                                                .email(userEmail)
-                                                .checkin(clock.asZonedDateTime(arrivalDate))
-                                                .checkout(clock.asZonedDateTime(arrivalDate.plusDays(lengthOfStay)))
-                                                .build()
-                            )
-                    );
-                }
-            });
+            return repository.save(
+                    Reservation.builder()
+                            .email(userEmail)
+                            .checkin(arrivalDate.atStartOfDay())
+                            .checkout(arrivalDate.plusDays(lengthOfStay).atStartOfDay())
+                            .build()
+            );
+
         }
 
-        if (savedReservation.get() == null) {
-            throw new NoPlacesAvailableException();
-        }
-
-        return savedReservation.get();
+        throw new NoPlacesAvailableException();
     }
 
     private Boolean isReservable(LocalDate arrivalDate, int lengthOfStay) {
@@ -117,5 +103,10 @@ public class ReservationService {
 
     private <T> T last(ArrayList<T> list) {
         return list.get(list.size() - 1);
+    }
+
+
+    public void setCapacity(int newCapacity) {
+        this.campsiteCapacity = newCapacity;
     }
 }

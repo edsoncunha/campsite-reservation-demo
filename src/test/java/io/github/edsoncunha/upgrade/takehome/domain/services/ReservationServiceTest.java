@@ -13,10 +13,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
+import java.time.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -44,8 +41,8 @@ class ReservationServiceTest {
                 .lockManager(lockManagerMock);
     }
 
-    private ZonedDateTime january(int day, int year) {
-        return ZonedDateTime.of(LocalDate.of(year, 1, day), LocalTime.MIDNIGHT, ZoneId.of("UTC"));
+    private LocalDateTime january(int day, int year) {
+        return LocalDate.of(year, 1, day).atStartOfDay();
     }
 
     @Nested
@@ -72,11 +69,11 @@ class ReservationServiceTest {
                 return reservation;
             });
 
-            // mimic clock
-            when(clockMock.asZonedDateTime(any())).thenAnswer((invocation) -> {
-                LocalDate date = invocation.getArgument(0, LocalDate.class);
-                return zonedAtUtc(date);
-            });
+//            // mimic clock
+//            when(clockMock.asZonedDateTime(any())).thenAnswer((invocation) -> {
+//                LocalDate date = invocation.getArgument(0, LocalDate.class);
+//                return zonedAtUtc(date);
+//            });
 
             // when
             String email = "dummy@test.com";
@@ -90,8 +87,8 @@ class ReservationServiceTest {
 
             assertThat(reservationSentToDatabase.get()).isNotNull();
             assertThat(reservationSentToDatabase.get().getEmail()).isEqualTo(email);
-            assertThat(reservationSentToDatabase.get().getCheckin()).isEqualTo(zonedAtUtc(arrivalDate));
-            assertThat(reservationSentToDatabase.get().getCheckout()).isEqualTo(zonedAtUtc(arrivalDate.plusDays(lengthOfStay)));
+            assertThat(reservationSentToDatabase.get().getCheckin()).isEqualTo(arrivalDate.atStartOfDay());
+            assertThat(reservationSentToDatabase.get().getCheckout()).isEqualTo(arrivalDate.plusDays(lengthOfStay).atStartOfDay());
 
             assertThat(returnedReservation).isNotNull();
         }
@@ -118,8 +115,8 @@ class ReservationServiceTest {
                 Collections.singletonList (
                     Reservation.builder()
                             .id(1)
-                            .checkin(zonedAtUtc(arrivalDate))
-                            .checkout(zonedAtUtc(arrivalDate.plusDays(lengthOfStay)))
+                            .checkin(arrivalDate.atStartOfDay())
+                            .checkout(arrivalDate.plusDays(lengthOfStay).atStartOfDay())
                             .build()
                 )
             );
@@ -131,13 +128,6 @@ class ReservationServiceTest {
             Mockito.verify(repositoryMock, times(0)).save(any());
         }
 
-    }
-
-
-
-
-    private ZonedDateTime zonedAtUtc(LocalDate arrivalDate) {
-        return arrivalDate.atStartOfDay(ZoneId.of("UTC"));
     }
 
     @Nested
@@ -235,7 +225,7 @@ class ReservationServiceTest {
                     .checkin(january(1, 2023))
                     .checkout(january(4, 2023)).build());
 
-            when(repositoryMock.getReservationsInPeriod(searchStartDate, searchEndDate)).thenReturn(reservations);
+            when(repositoryMock.getReservationsInPeriod(any(), any())).thenReturn(reservations);
 
             List<LocalDate> availableDates = service.getAvailableDates(searchStartDate, searchEndDate);
 

@@ -8,10 +8,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
+import java.time.*;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -29,7 +26,7 @@ class ValidationDateAllowedRangeReservationRuleTest {
 
     @Test
     public void whenReservationIsLessThan1DayAheadAnExceptionMustBeThrown() {
-        ZonedDateTime campsiteDateTime = ZonedDateTime.now().plusHours(3);
+        LocalDateTime campsiteDateTime = LocalDateTime.now().plusHours(3);
 
         when(clock.campsiteDateTime()).thenReturn(campsiteDateTime);
 
@@ -40,7 +37,7 @@ class ValidationDateAllowedRangeReservationRuleTest {
 
     @Test
     public void whenReservationIs1DayAheadNoExceptionMustBeThrown() {
-        ZonedDateTime now = ZonedDateTime.of(LocalDate.now(), LocalTime.NOON, ZoneId.of("UTC"));
+        LocalDateTime now = LocalDateTime.of(LocalDate.now(), LocalTime.NOON);
 
         when(clock.campsiteDateTime()).thenReturn(now);
 
@@ -49,7 +46,7 @@ class ValidationDateAllowedRangeReservationRuleTest {
 
     @Test
     public void whenReservationIsMoreThan30DaysAheadAnExceptionMustBeThrown() {
-        ZonedDateTime campsiteDateTime = ZonedDateTime.now().plusHours(3);
+        LocalDateTime campsiteDateTime = LocalDateTime.now().plusHours(3);
 
         when(clock.campsiteDateTime()).thenReturn(campsiteDateTime);
 
@@ -60,10 +57,9 @@ class ValidationDateAllowedRangeReservationRuleTest {
 
     @Test
     public void exceptionDateRangeIsCalculatedCorrectly() {
-        ZonedDateTime campsiteDateTime = ZonedDateTime.of(
+        LocalDateTime campsiteDateTime = LocalDateTime.of(
                 LocalDate.of(2001,1,1),
-                LocalTime.MIDNIGHT,
-                ZoneId.of("UTC"));
+                LocalTime.MIDNIGHT);
 
         when(clock.campsiteDateTime()).thenReturn(campsiteDateTime);
 
@@ -81,13 +77,11 @@ class ValidationDateAllowedRangeReservationRuleTest {
 
     @Test
     public void whenReservation30DaysAheadNoExceptionMustBeThrown() {
-        ZonedDateTime campsiteDateTime = LocalDate.of(2001, 1, 1)
-                .atStartOfDay(ZoneId.of("UTC")).plusHours(-1);
+        LocalDate dt = LocalDate.of(2001, 1, 1);
+        LocalDateTime campsiteDateTime = LocalDateTime.of(dt, LocalTime.MIDNIGHT).plusHours(-1);
 
         when(clock.campsiteDateTime()).thenReturn(campsiteDateTime);
 
         rule.validate("dummy", LocalDate.of(2001, 1, 1), 30);
     }
-
-
 }
