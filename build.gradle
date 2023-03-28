@@ -63,6 +63,6 @@ bootRun {
 }
 
 bootBuildImage {
-    imageName="campingsite-app" // will be available at docker.io/library/campingsite-app:latest
+    imageName="campsite-app" // will be available at docker.io/library/campsite-app:latest
     runImage="openjdk:19" // registry.hub.docker.com/library/
 }

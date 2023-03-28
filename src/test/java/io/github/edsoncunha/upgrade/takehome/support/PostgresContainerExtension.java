@@ -16,7 +16,7 @@ public class PostgresContainerExtension implements BeforeAllCallback, AfterAllCa
         container = new PostgreSQLContainer<>("postgres:12.5-alpine")
                 .withUsername("test-user")
                 .withPassword("test-pwd")
-                .withDatabaseName("campingsite-demo")
+                .withDatabaseName("campsite-demo")
                 .withEnv("TZ", TimeZone.getDefault().getID())
                 .withEnv("PGTZ", TimeZone.getDefault().getID())
                 .waitingFor(Wait.forListeningPort());
