@@ -8,6 +8,8 @@ import io.github.edsoncunha.upgrade.takehome.domain.services.validation.Reservat
 import io.github.edsoncunha.upgrade.takehome.etc.Clock;
 import lombok.Builder;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +23,8 @@ import java.util.List;
 @Builder
 @Service
 public class ReservationService {
+    public static final String AVAILABILITY_SEARCH_CACHE_NAME = "availability";
+
     private int campsiteCapacity;
     private final Clock clock;
     private final ReservationRepository repository;
@@ -44,17 +48,9 @@ public class ReservationService {
 
         if (isReservable(arrivalDate, lengthOfStay)) {
             return lockManager.lock(13, timeout, () -> {
-
                 // double-check locking
                 if (isReservable(arrivalDate, lengthOfStay)) {
-                    return repository.save(
-                            Reservation.builder()
-                                    .email(userEmail)
-                                    .checkin(arrivalDate.atStartOfDay())
-                                    .checkout(arrivalDate.plusDays(lengthOfStay).atStartOfDay())
-                                    .build()
-                    );
-
+                    return doSaveReservation(userEmail, arrivalDate, lengthOfStay);
                 }
 
                 throw new NoPlacesAvailableException();
@@ -64,19 +60,23 @@ public class ReservationService {
         throw new NoPlacesAvailableException();
     }
 
-    private Boolean isReservable(LocalDate arrivalDate, int lengthOfStay) {
-        ArrayList<LocalDate> accommodationDates = new ArrayList<>();
-        for (int i = 0; i < lengthOfStay; i++) {
-            accommodationDates.add(arrivalDate.plusDays(i));
-        }
-
-        List<LocalDate> availableDates = getAvailableDates(arrivalDate, last(accommodationDates));
-
-        return new HashSet<>(availableDates).containsAll(accommodationDates);
+    @CacheEvict(value = AVAILABILITY_SEARCH_CACHE_NAME, allEntries = true) /* evicts all keys for the sake of simplicity.
+     In a more realistic scenario, it would be required to evict availability information only for {start, end} cache keys that have some overlapping
+     with the reservation we have just created */
+    private Reservation doSaveReservation(String userEmail, LocalDate arrivalDate, int lengthOfStay) {
+        return repository.save(
+                Reservation.builder()
+                        .email(userEmail)
+                        .checkin(arrivalDate.atStartOfDay())
+                        .checkout(arrivalDate.plusDays(lengthOfStay).atStartOfDay())
+                        .build()
+        );
     }
 
-    //TODO: enable caching to speed up reading.
+    @Cacheable(value = AVAILABILITY_SEARCH_CACHE_NAME, key = "'#startDate__#endDate'")
     public List<LocalDate> getAvailableDates(LocalDate firstDayOfAccommodation, LocalDate lastDayOfAccommodation) {
+        firstDayOfAccommodation = ensureFutureDate(firstDayOfAccommodation);
+
         List<Reservation> currentReservations = repository.getReservationsInPeriod(firstDayOfAccommodation, lastDayOfAccommodation);
 
         // the island capacity is small, so it's fine to count occupation per day on the application side
@@ -96,6 +96,24 @@ public class ReservationService {
         }
 
         return availableDates;
+    }
+
+    private Boolean isReservable(LocalDate arrivalDate, int lengthOfStay) {
+        ArrayList<LocalDate> accommodationDates = new ArrayList<>();
+        for (int i = 0; i < lengthOfStay; i++) {
+            accommodationDates.add(arrivalDate.plusDays(i));
+        }
+
+        List<LocalDate> availableDates = getAvailableDates(arrivalDate, last(accommodationDates));
+
+        return new HashSet<>(availableDates).containsAll(accommodationDates);
+    }
+
+    private LocalDate ensureFutureDate(LocalDate firstDayOfAccommodation) {
+        if (firstDayOfAccommodation.toEpochDay() <= clock.campsiteDateTime().toLocalDate().toEpochDay()) {
+            firstDayOfAccommodation = clock.campsiteDateTime().toLocalDate();
+        }
+        return firstDayOfAccommodation;
     }
 
     public void cancelReservation(long reservationId) {

@@ -5,8 +5,10 @@ import io.swagger.v3.oas.annotations.info.Contact;
 import io.swagger.v3.oas.annotations.info.Info;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cache.annotation.EnableCaching;
 
 @SpringBootApplication
+@EnableCaching
 @OpenAPIDefinition(info = @Info(description = "Campsite Management API", version = "0.1", contact = @Contact(name = "Edson Cunha",
         email = "edsoncamposcunha@gmail.com", url = "https://www.linkedin.com/in/edsoncunha/")))
 public class TakehomeApplication {

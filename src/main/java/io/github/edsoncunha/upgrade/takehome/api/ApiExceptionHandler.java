@@ -17,7 +17,7 @@ public class ApiExceptionHandler {
     public ResponseEntity<ApiCallError<String>> handleInternalServerError(HttpServletRequest request, Exception ex) {
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ApiCallError<>("Internal server error", Collections.singletonList(ex.getMessage())));
+                .body(new ApiCallError<>("Internal server error", Collections.singletonList(ex.toString())));
     }
 
     @ExceptionHandler(ReservationConstraintException.class)
