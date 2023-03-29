@@ -65,6 +65,8 @@ class ReservationServiceTest {
                     .campsiteCapacity(1)
                     .build();
 
+            when(clockMock.now()).thenReturn(LocalDateTime.now().plusDays(-1));
+
             // just returning what it gets
             AtomicReference<Reservation> reservationSentToDatabase = new AtomicReference<>();
             when(repositoryMock.save(any())).thenAnswer((invocation) -> {
@@ -100,6 +102,8 @@ class ReservationServiceTest {
                     .campsiteCapacity(1)
                     .build();
 
+            when(clockMock.now()).thenReturn(LocalDateTime.now().plusDays(-1));
+
             String email = "dummy@test.com";
             LocalDate arrivalDate = LocalDate.now().plusDays(1);
             int lengthOfStay = 1;
@@ -131,6 +135,7 @@ class ReservationServiceTest {
         @DisplayName("If none fails, validations are performed one by one")
         public void allValidationsShouldBePerformedWhenAllAreSuccessful() {
             ArrayList<ReservationRule> reservationRules = new ArrayList<>();
+            when(clockMock.now()).thenReturn(LocalDateTime.now().plusDays(-1));
 
             ReservationRule rule1 = mock(ReservationRule.class);
             ReservationRule rule2 = mock(ReservationRule.class);
@@ -189,6 +194,7 @@ class ReservationServiceTest {
         @DisplayName("Availability is correctly calculated even with fragmented space allocation")
         public void availableDatesAreCalculatedCorrectly() {
             List<ReservationRule> noReservationRules = Collections.emptyList();
+            when(clockMock.now()).thenReturn(january(1, 2023));
 
             ReservationService service = serviceBuilderFor(noReservationRules)
                     .campsiteCapacity(3)

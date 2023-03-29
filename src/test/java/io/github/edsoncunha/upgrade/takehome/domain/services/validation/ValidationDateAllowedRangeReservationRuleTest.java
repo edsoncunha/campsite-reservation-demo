@@ -28,7 +28,7 @@ class ValidationDateAllowedRangeReservationRuleTest {
     public void whenReservationIsLessThan1DayAheadAnExceptionMustBeThrown() {
         LocalDateTime campsiteDateTime = LocalDateTime.now().plusHours(3);
 
-        when(clock.campsiteDateTime()).thenReturn(campsiteDateTime);
+        when(clock.now()).thenReturn(campsiteDateTime);
 
         assertThrows(ReservationDateNotInAllowedRangeException.class, () -> {
             rule.validate("dummy", LocalDate.now(), 1);
@@ -39,7 +39,7 @@ class ValidationDateAllowedRangeReservationRuleTest {
     public void whenReservationIs1DayAheadNoExceptionMustBeThrown() {
         LocalDateTime now = LocalDateTime.of(LocalDate.now(), LocalTime.NOON);
 
-        when(clock.campsiteDateTime()).thenReturn(now);
+        when(clock.now()).thenReturn(now);
 
         rule.validate("dummy", now.plusHours(24).toLocalDate(), 1);
     }
@@ -48,7 +48,7 @@ class ValidationDateAllowedRangeReservationRuleTest {
     public void whenReservationIsMoreThan30DaysAheadAnExceptionMustBeThrown() {
         LocalDateTime campsiteDateTime = LocalDateTime.now().plusHours(3);
 
-        when(clock.campsiteDateTime()).thenReturn(campsiteDateTime);
+        when(clock.now()).thenReturn(campsiteDateTime);
 
         assertThrows(ReservationDateNotInAllowedRangeException.class, () -> {
             rule.validate("dummy", LocalDate.now(), 31);
@@ -61,7 +61,7 @@ class ValidationDateAllowedRangeReservationRuleTest {
                 LocalDate.of(2001,1,1),
                 LocalTime.MIDNIGHT);
 
-        when(clock.campsiteDateTime()).thenReturn(campsiteDateTime);
+        when(clock.now()).thenReturn(campsiteDateTime);
 
         try {
             rule.validate("dummy", campsiteDateTime.toLocalDate(), 31);
@@ -80,7 +80,7 @@ class ValidationDateAllowedRangeReservationRuleTest {
         LocalDate dt = LocalDate.of(2001, 1, 1);
         LocalDateTime campsiteDateTime = LocalDateTime.of(dt, LocalTime.MIDNIGHT).plusHours(-1);
 
-        when(clock.campsiteDateTime()).thenReturn(campsiteDateTime);
+        when(clock.now()).thenReturn(campsiteDateTime);
 
         rule.validate("dummy", LocalDate.of(2001, 1, 1), 30);
     }

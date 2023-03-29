@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 @Component
 public class Clock {
 
-    public LocalDateTime campsiteDateTime() {
+    public LocalDateTime now() {
         return LocalDateTime.now();
     }
 }

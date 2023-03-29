@@ -7,6 +7,7 @@ import io.github.edsoncunha.upgrade.takehome.domain.repositories.ReservationRepo
 import io.github.edsoncunha.upgrade.takehome.domain.services.validation.ReservationRule;
 import io.github.edsoncunha.upgrade.takehome.etc.Clock;
 import lombok.Builder;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -22,6 +23,7 @@ import java.util.List;
 
 @Builder
 @Service
+@Slf4j
 public class ReservationService {
     public static final String AVAILABILITY_SEARCH_CACHE_NAME = "availability";
 
@@ -60,21 +62,10 @@ public class ReservationService {
         throw new NoPlacesAvailableException();
     }
 
-    @CacheEvict(value = AVAILABILITY_SEARCH_CACHE_NAME, allEntries = true) /* evicts all keys for the sake of simplicity.
-     In a more realistic scenario, it would be required to evict availability information only for {start, end} cache keys that have some overlapping
-     with the reservation we have just created */
-    private Reservation doSaveReservation(String userEmail, LocalDate arrivalDate, int lengthOfStay) {
-        return repository.save(
-                Reservation.builder()
-                        .email(userEmail)
-                        .checkin(arrivalDate.atStartOfDay())
-                        .checkout(arrivalDate.plusDays(lengthOfStay).atStartOfDay())
-                        .build()
-        );
-    }
-
-    @Cacheable(value = AVAILABILITY_SEARCH_CACHE_NAME, key = "'#startDate__#endDate'")
+    @Cacheable(value = AVAILABILITY_SEARCH_CACHE_NAME)
     public List<LocalDate> getAvailableDates(LocalDate firstDayOfAccommodation, LocalDate lastDayOfAccommodation) {
+        log.info("Searching availability between  {} and {}", firstDayOfAccommodation, lastDayOfAccommodation);
+
         firstDayOfAccommodation = ensureFutureDate(firstDayOfAccommodation);
 
         List<Reservation> currentReservations = repository.getReservationsInPeriod(firstDayOfAccommodation, lastDayOfAccommodation);
@@ -98,6 +89,19 @@ public class ReservationService {
         return availableDates;
     }
 
+    @CacheEvict(value = AVAILABILITY_SEARCH_CACHE_NAME, allEntries = true) /* evicts all keys for the sake of simplicity.
+     In a more realistic scenario, it would be required to evict availability information only for {start, end} cache keys that have some overlapping
+     with the reservation we have just created */
+    private Reservation doSaveReservation(String userEmail, LocalDate arrivalDate, int lengthOfStay) {
+        return repository.save(
+                Reservation.builder()
+                        .email(userEmail)
+                        .checkin(arrivalDate.atStartOfDay())
+                        .checkout(arrivalDate.plusDays(lengthOfStay).atStartOfDay())
+                        .build()
+        );
+    }
+
     private Boolean isReservable(LocalDate arrivalDate, int lengthOfStay) {
         ArrayList<LocalDate> accommodationDates = new ArrayList<>();
         for (int i = 0; i < lengthOfStay; i++) {
@@ -110,8 +114,8 @@ public class ReservationService {
     }
 
     private LocalDate ensureFutureDate(LocalDate firstDayOfAccommodation) {
-        if (firstDayOfAccommodation.toEpochDay() <= clock.campsiteDateTime().toLocalDate().toEpochDay()) {
-            firstDayOfAccommodation = clock.campsiteDateTime().toLocalDate();
+        if (firstDayOfAccommodation.toEpochDay() <= clock.now().toLocalDate().toEpochDay()) {
+            firstDayOfAccommodation = clock.now().toLocalDate();
         }
         return firstDayOfAccommodation;
     }

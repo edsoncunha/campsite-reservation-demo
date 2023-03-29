@@ -6,7 +6,6 @@ import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
-import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 
 @Component
@@ -19,7 +18,7 @@ public class ValidationDateAllowedRangeReservationRule implements ReservationRul
 
     @Override
     public void validate(String userEmail, LocalDate arrivalDate, int lengthOfStay) {
-        LocalDate campsiteCurrentDate = clock.campsiteDateTime().toLocalDate();
+        LocalDate campsiteCurrentDate = clock.now().toLocalDate();
 
         long daysInAdvance = ChronoUnit.DAYS.between(campsiteCurrentDate, arrivalDate);
 
