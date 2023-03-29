@@ -1,4 +1,4 @@
-# Upgrade code challenge
+# Campsite reservation demo
 ## Dependencies to run:
 
 - docker-compose
