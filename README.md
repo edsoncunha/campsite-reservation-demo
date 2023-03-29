@@ -32,3 +32,4 @@ hey -c 100 -q 40 -z 60s 'http://localhost:8080/api/reservations/availability?sta
 - The system is expected to have more searches than reservations, so a cache was added to improve performance. 
 - When a reservation is completed, the cache is evicted. For simplicity, all entries are remove. An improvement would be evicting only the entries that overlap the reservation added to the database.
 - The implemented cache is very simple and uses an in-memory hashmap as data store. That implies the cache would be specific for each server in a multi server deployment. In a realistic deployment, we would very likely have a horizontal autoscaler and a centralized cache store, such as Redis.
+- I _really_ would like to implement a more sophisticated load test, by using kubernetes + HPA + [Gatling](https://gatling.io/), but unfortunately had not enough time for that.
