@@ -73,6 +73,42 @@ public class ReservationIT {
         });
     }
 
+    @Test
+    public void reservationCanBePostponed() {
+        reservationService.setCapacity(1);
+
+        LocalDate arrivalDate = LocalDate.now().plusDays(3);
+        int lengthOfStay = 1;
+
+        Reservation reservation = reservationService.reserve("simple@mail.com", arrivalDate, lengthOfStay);
+
+        LocalDate newArrivalDate = arrivalDate.plusDays(1);
+
+        Reservation updated = reservationService.updateReservation(reservation.getId(), newArrivalDate, lengthOfStay);
+
+        assertThat(updated.getId()).isEqualTo(reservation.getId());
+        assertThat(updated.getCheckin().toLocalDate().toEpochDay()).isEqualTo(newArrivalDate.toEpochDay());
+        assertThat(updated.getCheckout().toLocalDate().toEpochDay()).isEqualTo(newArrivalDate.plusDays(lengthOfStay).toEpochDay());
+    }
+
+    @Test
+    public void reservationCanBeProlonged() {
+        reservationService.setCapacity(1);
+
+        LocalDate arrivalDate = LocalDate.now().plusDays(3);
+        int lengthOfStay = 1;
+
+        Reservation reservation = reservationService.reserve("simple@mail.com", arrivalDate, lengthOfStay);
+
+        int newLengthOfStay = 3;
+
+        Reservation updated = reservationService.updateReservation(reservation.getId(), arrivalDate, newLengthOfStay);
+
+        assertThat(updated.getId()).isEqualTo(reservation.getId());
+        assertThat(updated.getCheckin().toLocalDate().toEpochDay()).isEqualTo(arrivalDate.toEpochDay());
+        assertThat(updated.getCheckout().toLocalDate().toEpochDay()).isEqualTo(arrivalDate.plusDays(newLengthOfStay).toEpochDay());
+    }
+
     protected void doConcurrenctly(int threads, Consumer<String> operation) throws InterruptedException {
         CountDownLatch startLatch = new CountDownLatch(1);
         CountDownLatch endLatch = new CountDownLatch(threads);

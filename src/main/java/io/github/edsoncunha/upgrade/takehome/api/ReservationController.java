@@ -1,6 +1,7 @@
 package io.github.edsoncunha.upgrade.takehome.api;
 
 import io.github.edsoncunha.upgrade.takehome.api.requests.ReservationRequest;
+import io.github.edsoncunha.upgrade.takehome.api.requests.UpdateReservationRequest;
 import io.github.edsoncunha.upgrade.takehome.api.responses.ApiCallError;
 import io.github.edsoncunha.upgrade.takehome.api.swagger.types.ListOfLocalDate;
 import io.github.edsoncunha.upgrade.takehome.domain.entities.Reservation;
@@ -47,7 +48,7 @@ public class ReservationController {
     @PostMapping
     @Operation(summary = "Submits a reservation")
     @ApiResponses(
-            value = {@ApiResponse(responseCode = "201", description = "Successful", content = {@Content(mediaType = "application/json",
+            value = {@ApiResponse(responseCode = "201", description = "Created successfully", content = {@Content(mediaType = "application/json",
                     schema = @Schema(implementation = Boolean.class))}),
                     @ApiResponse(responseCode = "409", description = "Reservation was not successful due to a rule violation", content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = ApiCallError.class))})
@@ -59,6 +60,21 @@ public class ReservationController {
         return ResponseEntity
                 .created(URI.create("/reservations/" + reservation.getId()))
                 .body(reservation);
+    }
+
+    @PutMapping("/{id}")
+    @Operation
+    @ApiResponses(
+            value = {@ApiResponse(responseCode = "200", description = "Updated successfully", content = {@Content(mediaType = "application/json",
+                    schema = @Schema(implementation = Boolean.class))}),
+                    @ApiResponse(responseCode = "409", description = "Reservation could not be updated due to a rule violation", content = {@Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ApiCallError.class))})
+            }
+    )
+    public ResponseEntity<Reservation> updateReservation(@Parameter(description = "Reservation id", required = true) @PathVariable("id") @NotNull long id,  @RequestBody UpdateReservationRequest request) {
+        Reservation updatedReservation = reservationService.updateReservation(id, request.arrivalDate, request.lengthOfStay);
+
+        return ResponseEntity.ok(updatedReservation);
     }
 
     @DeleteMapping("/{id}")

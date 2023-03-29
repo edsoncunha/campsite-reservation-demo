@@ -13,6 +13,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.cache.CacheManager;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -41,11 +42,15 @@ class ReservationServiceTest {
     @Mock
     private ReservationRepository repositoryMock;
 
+    @Mock
+    private CacheManager cacheManager;
+
     private ReservationService.ReservationServiceBuilder serviceBuilderFor(List<ReservationRule> reservationRules) {
         return ReservationService.builder()
                 .clock(clockMock)
                 .reservationRules(reservationRules)
                 .repository(repositoryMock)
+                .cacheManager(cacheManager)
                 .lockManager(bypassLockManager);
     }
 

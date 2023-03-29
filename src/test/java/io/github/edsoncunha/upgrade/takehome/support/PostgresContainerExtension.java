@@ -6,6 +6,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 
+import java.text.MessageFormat;
 import java.util.TimeZone;
 
 public class PostgresContainerExtension implements BeforeAllCallback, AfterAllCallback {
@@ -29,12 +30,13 @@ public class PostgresContainerExtension implements BeforeAllCallback, AfterAllCa
         System.setProperty("spring.datasource.password", container.getPassword());
         System.setProperty("spring.datasource.username", container.getUsername());
 
-        System.out.println("========================================================================================================");
-        System.out.println("    Started Postgres test database ");
-        System.out.println("    JDBC url: " + container.getJdbcUrl());
-        System.out.println("    User: " + container.getUsername());
-        System.out.println("    Password: " + container.getPassword());
-        System.out.println("========================================================================================================");
+        System.out.println("+-----------------------------------------------------------------------");
+        System.out.println("|   Started Postgres test database ");
+        System.out.println("|");
+        System.out.println("|   Url: " + container.getJdbcUrl());
+        System.out.println("|   User: " + container.getUsername());
+        System.out.println("|   Password: " + container.getPassword());
+        System.out.println("+-----------------------------------------------------------------------");
     }
 
     @Override
