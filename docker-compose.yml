@@ -12,7 +12,7 @@ services:
       - "5432:5432"
 
   campsite-app:
-    image: campsite-app:latest
+    image: campingsite-app:latest
     environment:
       SPRING_PROFILES_ACTIVE: compose
     ports:

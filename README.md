@@ -18,7 +18,7 @@ chmod +x start.sh
 ./start.sh
 ```
 
-API documentation will be available at [localhost:8080/documentation.html]()
+API documentation will be available at [localhost:8080/documentation.html](http://localhost:8080/documentation.html)
 
 ## How to run a simple load test
 100 parallel agents sending 40 request per second each:
@@ -32,4 +32,4 @@ hey -c 100 -q 40 -z 60s 'http://localhost:8080/api/reservations/availability?sta
 - The system is expected to have more searches than reservations, so a cache was added to improve performance. 
 - When a reservation is completed, the cache is evicted. For simplicity, all entries are removed. An improvement would be evicting only the entries that overlap the reservation just added to the database.
 - The implemented cache is very simple and uses an in-memory hashmap as data store. That implies the cache would be specific for each server in a multi server deployment. In a realistic deployment, we would very likely have a horizontal autoscaler and a centralized cache store, such as Redis.
-- I _really_ would like to implement a more sophisticated load test, by using kubernetes + HPA + [Gatling](https://gatling.io/), but unfortunately had not enough time for that.
+- I _really_ would like to implement a more sophisticated load test, by using kubernetes + HPA + [Gatling](https://gatling.io/), but unfortunately had not enough time for that. The idea was ramping up the number of requests and performing varied searchs and reservation attempts in parallel.

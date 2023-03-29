@@ -9,6 +9,7 @@ import io.github.edsoncunha.upgrade.takehome.domain.services.ReservationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -63,11 +64,19 @@ public class ReservationController {
     }
 
     @PutMapping("/{id}")
-    @Operation
+    @Operation(summary = "Updates a reservation")
     @ApiResponses(
             value = {@ApiResponse(responseCode = "200", description = "Updated successfully", content = {@Content(mediaType = "application/json",
-                    schema = @Schema(implementation = Boolean.class))}),
-                    @ApiResponse(responseCode = "409", description = "Reservation could not be updated due to a rule violation", content = {@Content(mediaType = "application/json",
+                    schema = @Schema(implementation = Reservation.class), examples = @ExampleObject(value= """
+                    {
+                      "id": 29,
+                      "email": "string",
+                      "checkin": "2023-03-29T02:00:00.000",
+                      "checkout": "2023-03-31T00:00:00.000",
+                      "canceled": false
+                    }"""))}),
+                    @ApiResponse(responseCode = "409", description = "Reservation could not be updated due to a rule violation",
+                            content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = ApiCallError.class))})
             }
     )
